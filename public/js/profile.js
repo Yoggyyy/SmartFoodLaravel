@@ -65,6 +65,13 @@ function updateProfileUI(user) {
     document.getElementById('edit-name').value = user.name;
     document.getElementById('edit-surname').value = user.surname;
     document.getElementById('edit-email').value = user.email;
+
+    // Campo de alérgenos para edición
+    const allergensForEdit = user.allergens && user.allergens.length > 0
+        ? user.allergens.map(a => a.name_allergen).join(', ')
+        : '';
+    document.getElementById('edit-allergens').value = allergensForEdit;
+
     document.getElementById('edit-preferences').value = user.preferences || '';
 }
 
@@ -79,9 +86,9 @@ function toggleEditMode() {
 
     // Ocultar elementos de visualización y mostrar de edición
     displayElements.forEach(el => el.style.display = 'none');
-    editElements.forEach(el => el.style.display = 'flex');
-    editBtn.classList.add('hidden');
-    actionButtons.classList.remove('hidden');
+    editElements.forEach(el => el.style.display = 'block');
+    editBtn.style.display = 'none';
+    actionButtons.style.display = 'flex';
 }
 
 /**
@@ -94,10 +101,10 @@ function cancelEdit() {
     const actionButtons = document.getElementById('profile-action-buttons');
 
     // Mostrar elementos de visualización y ocultar de edición
-    displayElements.forEach(el => el.style.display = 'flex');
+    displayElements.forEach(el => el.style.display = 'block');
     editElements.forEach(el => el.style.display = 'none');
-    editBtn.classList.remove('hidden');
-    actionButtons.classList.add('hidden');
+    editBtn.style.display = 'block';
+    actionButtons.style.display = 'none';
 
     // Restaurar valores originales en los campos
     if (currentUser) {
@@ -122,7 +129,8 @@ async function saveProfile() {
             name: document.getElementById('edit-name').value.trim(),
             surname: document.getElementById('edit-surname').value.trim(),
             email: document.getElementById('edit-email').value.trim(),
-            preferences: document.getElementById('edit-preferences').value.trim()
+            preferences: document.getElementById('edit-preferences').value.trim(),
+            allergens: document.getElementById('edit-allergens').value.trim()
         };
 
         // Validaciones del cliente

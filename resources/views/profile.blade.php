@@ -30,6 +30,11 @@
         .profile-edit {
             display: none;
         }
+
+        /* Hidden class for elements */
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="font-onest bg-green-50 h-screen">
@@ -65,9 +70,6 @@
 
             <!-- Opciones inferiores -->
             <div class="flex flex-col gap-2 px-4">
-                <a href="/settings" class="flex items-center gap-2 text-gray-700 hover:text-green-800 hover:bg-green-200 rounded-md px-2 py-2 transition text-sm">
-                    <span class="text-sm">⚙️</span> Configuración
-                </a>
                 <button onclick="logout()" class="flex items-center gap-2 text-gray-700 hover:text-green-800 transition text-sm">
                     <span class="text-sm">↩️</span> Cerrar sesión
                 </button>
@@ -103,74 +105,69 @@
                         </div>
 
                         <!-- Nombre -->
-                        <div class="flex flex-col gap-2 mb-4 profile-display">
+                        <div class="flex flex-col gap-2 mb-4">
                             <label class="text-sm text-gray-600">Nombre</label>
-                            <span id="display-name" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800">
+                            <span id="display-name" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-display">
                                 <!-- Se llenará con JavaScript -->
                             </span>
-                        </div>
-                        <div class="flex flex-col gap-2 mb-4 profile-edit">
-                            <label class="text-sm text-gray-600">Nombre</label>
                             <input
                                 type="text"
                                 id="edit-name"
-                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800"
+                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-edit"
                             />
                         </div>
 
                         <!-- Apellidos -->
-                        <div class="flex flex-col gap-2 mb-4 profile-display">
+                        <div class="flex flex-col gap-2 mb-4">
                             <label class="text-sm text-gray-600">Apellidos</label>
-                            <span id="display-surname" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800">
+                            <span id="display-surname" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-display">
                                 <!-- Se llenará con JavaScript -->
                             </span>
-                        </div>
-                        <div class="flex flex-col gap-2 mb-4 profile-edit">
-                            <label class="text-sm text-gray-600">Apellidos</label>
                             <input
                                 type="text"
                                 id="edit-surname"
-                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800"
+                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-edit"
                             />
                         </div>
 
                         <!-- Email -->
-                        <div class="flex flex-col gap-2 mb-4 profile-display">
+                        <div class="flex flex-col gap-2 mb-4">
                             <label class="text-sm text-gray-600">Correo electrónico</label>
-                            <span id="display-email" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800">
+                            <span id="display-email" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-display">
                                 <!-- Se llenará con JavaScript -->
                             </span>
-                        </div>
-                        <div class="flex flex-col gap-2 mb-4 profile-edit">
-                            <label class="text-sm text-gray-600">Correo electrónico</label>
                             <input
                                 type="email"
                                 id="edit-email"
-                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800"
+                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-edit"
                             />
                         </div>
 
                         <!-- Alérgenos -->
                         <div class="flex flex-col gap-2 mb-4">
                             <label class="text-sm text-gray-600">Alérgenos</label>
-                            <span id="display-allergens" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800">
+                            <span id="display-allergens" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-display">
                                 <!-- Se llenará con JavaScript -->
                             </span>
+                            <textarea
+                                id="edit-allergens"
+                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 resize-none profile-edit"
+                                rows="2"
+                                placeholder="Ej: Gluten, Lácteos, Frutos secos..."
+                            ></textarea>
                         </div>
 
                         <!-- Preferencias -->
-                        <div class="flex flex-col gap-2 mb-4 profile-display">
+                        <div class="flex flex-col gap-2 mb-4">
                             <label class="text-sm text-gray-600">Preferencias alimentarias</label>
-                            <span id="display-preferences" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800">
+                            <span id="display-preferences" class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 profile-display">
                                 <!-- Se llenará con JavaScript -->
                             </span>
-                        </div>
-                        <div class="flex flex-col gap-2 mb-4 profile-edit">
-                            <label class="text-sm text-gray-600">Preferencias alimentarias</label>
                             <textarea
                                 id="edit-preferences"
-                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 resize-none"
+                                class="bg-gray-100 rounded-md px-4 py-2 text-gray-800 resize-none profile-edit"
                                 rows="3"
+                                placeholder="Ej: Vegetariano, Comida mediterránea..."
                             ></textarea>
                         </div>
 
@@ -183,7 +180,7 @@
                             Editar perfil
                         </button>
 
-                        <div id="profile-action-buttons" class="flex gap-2 mt-4">
+                        <div id="profile-action-buttons" class="flex gap-2 mt-4 hidden">
                             <button
                                 type="button"
                                 id="save-profile-btn"
