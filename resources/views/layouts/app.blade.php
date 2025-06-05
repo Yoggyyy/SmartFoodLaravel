@@ -9,23 +9,7 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Configuración de Tailwind CSS personalizada -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        'sf-bg': '#f8fafc', // Blanco suave para el fondo
-                    },
-                    fontFamily: {
-                        'onest': ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{{ asset('css/layouts.css') }}">
 
     <!-- Dark Mode JavaScript Tailwind Nativo -->
     <script src="{{ asset('js/dark-mode-tailwind.js') }}"></script>

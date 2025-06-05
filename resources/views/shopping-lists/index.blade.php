@@ -6,36 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Mis Listas - SmartFood</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        .font-onest {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-
-        /* Responsive sidebar */
-        @media (max-width: 768px) {
-            aside {
-                width: 200px !important;
-                min-width: 200px !important;
-            }
-        }
-
-        @media (max-width: 640px) {
-            aside {
-                width: 180px !important;
-                min-width: 180px !important;
-            }
-        }
-
-        /* Animation for modals */
-        .modal {
-            transition: opacity 0.25s ease;
-        }
-
-        .modal-backdrop {
-            background: rgba(0, 0, 0, 0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/shopping-list.css') }}">
 
     <!-- Dark Mode JavaScript Tailwind Nativo (incluye configuración) -->
     <script src="{{ asset('js/dark-mode-tailwind.js') }}"></script>
@@ -120,24 +91,13 @@
                     </div>
 
                     @if($groupedLists->count() > 0)
-                        <!-- Botón Nueva Lista destacado -->
-                            <div class="mb-8">
-                            <div class="border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl p-6 bg-green-50/50 dark:bg-green-900/20 transition-colors">
-                                <button onclick="window.location.href='/chat'" class="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white px-6 py-4 rounded-lg text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-3">
-                                    <span class="text-2xl">+</span>
-                                    Nueva Lista de Compra
-                                </button>
-                                <p class="text-center text-green-700 dark:text-green-400 text-sm mt-3">Crea una nueva lista usando nuestro chat inteligente</p>
-                            </div>
-                                </div>
-
                         <!-- Grid de listas organizadas -->
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                             @foreach($groupedLists as $conversationId => $lists)
                                     @foreach($lists as $list)
-                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[280px]">
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[360px]">
                                         <!-- Header de la tarjeta -->
-                                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                                        <div class="p-8 border-b border-gray-100 dark:border-gray-700">
                                             <!-- Título y fecha -->
                                             <div class="flex items-start justify-between mb-3">
                                                 <h3 class="font-bold text-gray-900 dark:text-gray-100 text-xl truncate flex-1 mr-3">
@@ -187,7 +147,7 @@
                                         </div>
 
                                         <!-- Contenido de la tarjeta -->
-                                        <div class="p-6 space-y-4">
+                                        <div class="p-8 space-y-6">
                                             <!-- Información principal -->
                                             <div class="grid grid-cols-2 gap-4">
                                                 @if($list->budget)
@@ -214,7 +174,7 @@
                                         </div>
 
                                         <!-- Footer con acciones -->
-                                        <div class="p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600">
+                                        <div class="p-8 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600">
                                             <div class="flex gap-3">
                                                 <button onclick="viewList({{ $list->id }})"
                                                         class="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white px-4 py-3 rounded-md text-sm font-medium transition-colors">
@@ -235,14 +195,7 @@
                         <div class="text-center py-16">
                             <div class="text-8xl mb-6">📋</div>
                             <h2 class="text-3xl font-bold text-gray-600 dark:text-gray-400 mb-4">No tienes listas de compra</h2>
-                            <p class="text-gray-500 dark:text-gray-400 mb-8 text-lg">Inicia una conversación en el chat para generar tu primera lista</p>
-                            <div class="border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl p-8 bg-green-50/50 dark:bg-green-900/20 max-w-md mx-auto">
-                                <button onclick="window.location.href='/chat'" class="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white px-6 py-4 rounded-lg text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-3">
-                                    <span class="text-2xl">+</span>
-                                    Nueva Lista de Compra
-                                </button>
-                                <p class="text-center text-green-700 dark:text-green-400 text-sm mt-3">Comienza creando tu primera lista</p>
-                            </div>
+                            <p class="text-gray-500 dark:text-gray-400 mb-8 text-lg">Ve al chat para generar tu primera lista</p>
                         </div>
                     @endif
                 </div>
@@ -266,101 +219,6 @@
                         Eliminar
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para nueva lista -->
-    <div id="newListModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 hidden z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nueva Lista de Compras</h2>
-            </div>
-
-            <form id="newListForm" class="p-6 space-y-4">
-                @csrf
-                <div>
-                    <label for="newListName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nombre de la lista *
-                    </label>
-                    <input type="text"
-                           id="newListName"
-                           name="name"
-                           required
-                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent">
-                </div>
-
-                <div>
-                    <label for="newListBudget" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Presupuesto (€)
-                    </label>
-                    <input type="number"
-                           id="newListBudget"
-                           name="budget"
-                           step="0.01"
-                           min="0"
-                           placeholder="0.00"
-                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent">
-                </div>
-
-                <div>
-                    <label for="newListSupermarket" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Supermercado
-                    </label>
-                    <select id="newListSupermarket"
-                            name="supermarket_id"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent">
-                        <option value="">Seleccionar supermercado</option>
-                        @foreach($supermarkets as $supermarket)
-                            <option value="{{ $supermarket->id }}">{{ $supermarket->supermarket_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </form>
-
-            <div class="p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600 flex gap-3">
-                <button onclick="closeNewListModal()"
-                        type="button"
-                        class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
-                    Cancelar
-                </button>
-                <button onclick="createList()"
-                        type="button"
-                        class="flex-1 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-800 transition-colors">
-                    Crear Lista
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para cambiar supermercado -->
-    <div id="supermarketModal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 hidden z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Cambiar Supermercado</h2>
-            </div>
-
-            <div class="p-6">
-                <select id="modalSupermarketSelect"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent">
-                    <option value="">Sin supermercado</option>
-                    @foreach($supermarkets as $supermarket)
-                        <option value="{{ $supermarket->id }}">{{ $supermarket->supermarket_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600 flex gap-3">
-                <button onclick="closeSupermarketModal()"
-                        type="button"
-                        class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
-                    Cancelar
-                </button>
-                <button onclick="updateSupermarket()"
-                        type="button"
-                        class="flex-1 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-800 transition-colors">
-                    Cambiar
-                </button>
             </div>
         </div>
     </div>

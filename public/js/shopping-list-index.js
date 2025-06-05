@@ -93,65 +93,21 @@ async function deleteShoppingList(listId, listName) {
 }
 
 /**
- * Verificar si no quedan listas y mostrar mensaje correspondiente
+ * Verificar si no quedan listas para mostrar el estado vacío
  */
 function checkIfNoListsRemaining() {
-    const listsContainer = document.querySelector('.shopping-lists-container');
-    const listItems = listsContainer?.querySelectorAll('[data-list-id]');
+    const listItems = document.querySelectorAll('[data-list-id]');
+    const visibleItems = Array.from(listItems).filter(item => item.style.display !== 'none');
 
-    if (!listItems || listItems.length === 0) {
-        // Mostrar mensaje de "no hay listas"
-        const emptyStateHtml = `
-            <div class="text-center py-12">
-                <div class="text-6xl mb-4">📝</div>
-                <h3 class="text-xl font-semibold text-gray-600 mb-2">No tienes listas de compra</h3>
-                <p class="text-gray-500 mb-6">Comienza creando tu primera lista en el chat</p>
-                <a href="/chat" class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition">
-                    <span class="mr-2">💬</span>
-                    Ir al Chat
-                </a>
-            </div>
-        `;
+    const emptyState = document.querySelector('.empty-state');
+    const listsContainer = document.querySelector('.lists-container');
 
-        if (listsContainer) {
-            listsContainer.innerHTML = emptyStateHtml;
-        }
-    }
-}
-
-/**
- * Duplicar lista de compra
- * @param {number} listId - ID de la lista a duplicar
- * @param {string} listName - Nombre de la lista
- */
-async function duplicateShoppingList(listId, listName) {
-    try {
-        // Aquí podrías implementar la lógica de duplicación
-        // Por ahora, simplemente mostramos un mensaje
-        showMessage(`Función de duplicar "${listName}" en desarrollo`, 'info');
-
-        // TODO: Implementar duplicación real
-        /*
-        const response = await fetch(`/listas/${listId}/duplicate`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json',
-            }
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showMessage('Lista duplicada correctamente', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showMessage(result.message || 'Error al duplicar la lista', 'error');
-        }
-        */
-    } catch (error) {
-        console.error('Error duplicando lista:', error);
-        showMessage('Error al duplicar la lista', 'error');
+    if (visibleItems.length === 0 && emptyState && listsContainer) {
+        emptyState.style.display = 'block';
+        listsContainer.style.display = 'none';
+    } else if (emptyState && listsContainer) {
+        emptyState.style.display = 'none';
+        listsContainer.style.display = 'block';
     }
 }
 
@@ -222,89 +178,6 @@ function animateListItems() {
             item.style.transform = 'translateY(0)';
         }, index * 50);
     });
-}
-
-/**
- * Funciones para modal de nueva lista
- */
-function openNewListModal() {
-    const modal = document.getElementById('newListModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeNewListModal() {
-    const modal = document.getElementById('newListModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    // Limpiar formulario
-    document.getElementById('newListForm').reset();
-}
-
-async function createList() {
-    const form = document.getElementById('newListForm');
-    const formData = new FormData(form);
-
-    const data = {
-        name: formData.get('name'),
-        budget: formData.get('budget') || null,
-        supermarket_id: formData.get('supermarket_id') || null
-    };
-
-    try {
-        const response = await fetch('/listas', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showMessage('Lista creada correctamente', 'success');
-            closeNewListModal();
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            // Manejar errores de validación
-            if (result.errors) {
-                const errorMessages = Object.values(result.errors).flat();
-                showMessage(errorMessages.join(', '), 'error');
-            } else {
-                showMessage(result.message || 'Error al crear la lista', 'error');
-            }
-        }
-    } catch (error) {
-        console.error('Error creando lista:', error);
-        showMessage('Error de conexión al crear la lista', 'error');
-    }
-}
-
-/**
- * Funciones para modal de supermercado
- */
-function openSupermarketModal() {
-    const modal = document.getElementById('supermarketModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
-
-function closeSupermarketModal() {
-    const modal = document.getElementById('supermarketModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-async function updateSupermarket() {
-    const select = document.getElementById('modalSupermarketSelect');
-    const supermarketId = select.value;
-
-    // Esta función necesitará el ID de la lista que se está editando
-    // Por ahora solo muestra un mensaje
-    showMessage('Función de cambiar supermercado en desarrollo', 'info');
-    closeSupermarketModal();
 }
 
 /**

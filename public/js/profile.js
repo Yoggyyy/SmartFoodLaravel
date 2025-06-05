@@ -168,21 +168,21 @@ function populateAccountInfoBasic() {
     } else {
         lastActivity.textContent = 'Hace unas horas';
         console.log('⏰ Usando actividad por defecto');
-}
+    }
 }
 
 // Cargar cantidad de listas por separado
 async function loadListsCount() {
     console.log('📋 Intentando cargar cantidad de listas...');
     try {
-        const response = await fetch('/api/listas/grouped', {
+        const response = await fetch('/listas/grouped', {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
             }
         });
 
-        console.log('📋 Respuesta del endpoint /api/listas/grouped:', response.status);
+        console.log('📋 Respuesta del endpoint /listas/grouped:', response.status);
 
         if (response.ok) {
             const listsData = await response.json();
@@ -203,7 +203,7 @@ async function loadListsCount() {
             } else {
                 console.log('📋 No se encontraron listas en la respuesta');
                 listsCount.textContent = '0 listas';
-}
+            }
         } else {
             console.log('❌ Error al cargar listas, respuesta no OK');
             const listsCount = document.getElementById('lists-count');

@@ -1,0 +1,36 @@
+/* Fuente personalizada para layouts */
+.font-onest {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Color de fondo personalizado */
+.bg-sf-bg {
+    background-color: #f8fafc;
+}
+
+/* Estilos base para layouts de autenticación */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Responsive adjustments for auth layout */
+@media (max-width: 1024px) {
+    main {
+        grid-template-columns: 1fr;
+        padding: 2rem;
+    }
+
+    main > div:first-child {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+
+    section {
+        padding: 1rem;
+    }
+}

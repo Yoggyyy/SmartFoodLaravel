@@ -6,27 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SmartFood - Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        .font-onest {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-
-        /* Responsive sidebar */
-        @media (max-width: 768px) {
-            aside {
-                width: 200px !important;
-                min-width: 200px !important;
-            }
-        }
-
-        @media (max-width: 640px) {
-            aside {
-                width: 180px !important;
-                min-width: 180px !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/chat.css') }}">
 
     <!-- Dark Mode JavaScript Tailwind Nativo (incluye configuración) -->
     <script src="{{ asset('js/dark-mode-tailwind.js') }}"></script>
@@ -118,6 +98,7 @@
         </section>
     </main>
 
+    <script src="{{ asset('js/common.js') }}"></script>
     <script src="{{ asset('js/user-utils.js') }}"></script>
     <script src="{{ asset('js/chat.js') }}"></script>
 </body>

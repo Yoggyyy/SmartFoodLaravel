@@ -7,7 +7,66 @@
 const API_BASE_URL = window.location.origin;
 
 /**
- * Hacer peticiones HTTP con autenticación automática
+ * Hacer peticiones HTTP para rutas web (sin Bearer token, solo CSRF)
+ * @param {string} url - Endpoint de la web
+ * @param {Object} options - Opciones de la petición (method, body, headers)
+ * @returns {Promise} Respuesta JSON de la API
+ */
+async function webRequest(url, options = {}) {
+    // Obtener token CSRF del HTML
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // Headers por defecto para rutas web
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin' // Incluir cookies de sesión
+    };
+
+    // Añadir token CSRF para peticiones POST/PUT/DELETE
+    if (csrfToken && options.method && options.method.toUpperCase() !== 'GET') {
+        defaultOptions.headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+
+    // Combinar opciones
+    const finalOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers
+        }
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${url}`, finalOptions);
+
+        if (!response.ok) {
+            // Si es 401, el usuario no está autenticado
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Si es 419, el token CSRF ha expirado
+            if (response.status === 419) {
+                window.location.reload();
+                return;
+            }
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en petición web:', error);
+        throw error;
+    }
+}
+
+/**
+ * Hacer peticiones HTTP con autenticación automática (para APIs)
  * @param {string} url - Endpoint de la API
  * @param {Object} options - Opciones de la petición (method, body, headers)
  * @returns {Promise} Respuesta JSON de la API
@@ -128,7 +187,7 @@ function generateAvatar(name, surname = '') {
 async function logout() {
     try {
         // Notificar al servidor
-        await apiRequest('/api/auth/logout', { method: 'POST' });
+        await apiRequest('/logout', { method: 'POST' });
     } catch (error) {
         console.error('Error during logout:', error);
     } finally {

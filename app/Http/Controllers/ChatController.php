@@ -96,10 +96,17 @@ class ChatController extends Controller
             ], [
                 'message.required' => 'El mensaje es obligatorio.',
                 'message.max' => 'El mensaje no puede exceder 1000 caracteres.',
+                'conversation_id.string' => 'ID de conversación debe ser una cadena válida.',
                 'conversation_id.max' => 'ID de conversación inválido.'
             ]);
 
             if ($validator->fails()) {
+                Log::warning('Chat: Error de validación', [
+                    'errors' => $validator->errors(),
+                    'request_data' => $request->all(),
+                    'user_id' => $request->user()->id ?? null
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Error de validación',
@@ -110,7 +117,7 @@ class ChatController extends Controller
             // Obtener datos del usuario autenticado
             $user = $request->user();
             $userMessage = $request->message;
-            $conversationId = $request->conversation_id ?? 'default';
+            $conversationId = $request->conversation_id ?? 'default_' . $user->id;
 
             // Preparar contexto personalizado del usuario para la IA
             $userContext = [

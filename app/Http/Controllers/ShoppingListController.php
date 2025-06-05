@@ -67,18 +67,39 @@ class ShoppingListController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+            // Verificar y corregir listas sin conversación
+            foreach ($shoppingLists as $list) {
+                if (!$list->conversation_id || !$list->conversation) {
+                    // Crear una conversación automáticamente para esta lista
+                    $conversation = Conversation::create([
+                        'name' => $list->name_list,
+                        'user_id' => $user->id,
+                        'is_active' => true
+                    ]);
+
+                    // Actualizar la lista con la nueva conversación
+                    $list->update(['conversation_id' => $conversation->id]);
+
+                    // Recargar la relación
+                    $list->load('conversation');
+
+                    Log::info('Conversación creada automáticamente para lista huérfana', [
+                        'list_id' => $list->id,
+                        'list_name' => $list->name_list,
+                        'conversation_id' => $conversation->id,
+                        'user_id' => $user->id
+                    ]);
+                }
+            }
+
             // Agrupar por conversación
             $groupedLists = $shoppingLists->groupBy('conversation_id');
 
-            // Obtener supermercados para los modales
-            $supermarkets = Supermarket::orderBy('supermarket_name')->get();
-
-            return view('shopping-lists.index', compact('groupedLists', 'supermarkets'));
+            return view('shopping-lists.index', compact('groupedLists'));
 
         } catch (\Exception $e) {
             return view('shopping-lists.index', [
-                'groupedLists' => collect(),
-                'supermarkets' => collect()
+                'groupedLists' => collect()
             ]);
         }
     }
@@ -226,6 +247,31 @@ class ShoppingListController extends Controller
                 ->orderBy('conversation_id')
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+            // Verificar y corregir listas sin conversación
+            foreach ($shoppingLists as $list) {
+                if (!$list->conversation_id || !$list->conversation) {
+                    // Crear una conversación automáticamente para esta lista
+                    $conversation = Conversation::create([
+                        'name' => $list->name_list,
+                        'user_id' => $user->id,
+                        'is_active' => true
+                    ]);
+
+                    // Actualizar la lista con la nueva conversación
+                    $list->update(['conversation_id' => $conversation->id]);
+
+                    // Recargar la relación
+                    $list->load('conversation');
+
+                    Log::info('Conversación creada automáticamente en getGroupedLists', [
+                        'list_id' => $list->id,
+                        'list_name' => $list->name_list,
+                        'conversation_id' => $conversation->id,
+                        'user_id' => $user->id
+                    ]);
+                }
+            }
 
             $groupedLists = $shoppingLists->groupBy('conversation_id')->map(function ($lists) {
                 return [

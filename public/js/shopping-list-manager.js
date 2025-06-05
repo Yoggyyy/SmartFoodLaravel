@@ -254,35 +254,67 @@ async function deleteProduct(productId) {
 function addProductToDOM(product) {
     const container = document.getElementById('products-container');
 
-    // Crear HTML del producto
+    if (!container) {
+        console.warn('No se encontró el contenedor de productos');
+        return;
+    }
+
+    // Determinar el color de la categoría
+    const categoryColors = {
+        'Frutas': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        'Verduras': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        'Carnes': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        'Pescados': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Lácteos': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Panadería': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Bebidas': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Limpieza': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Higiene': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Congelados': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'Otros': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+        'General': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    };
+
+    const colorClass = categoryColors[product.category] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+
+    // Crear HTML del producto como fila de tabla
     const productHtml = `
-        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50" data-product-id="${product.id}">
-            <div class="flex items-center gap-4">
-                <input type="checkbox" class="h-5 w-5 text-green-600 rounded" onchange="toggleProduct(this)">
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors product-row" data-product-id="${product.id}" data-category="${product.category || ''}">
+            <td class="py-1.5 px-3">
+                <input type="checkbox" class="h-3.5 w-3.5 text-green-600 rounded border-gray-300 dark:border-gray-600 focus:ring-green-500" onchange="toggleProduct(this)">
+            </td>
+            <td class="py-1.5 px-3">
                 <div>
-                    <h3 class="font-medium text-gray-800 product-name">${product.name}</h3>
-                    <span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full mt-1 product-category">
-                        ${product.category}
-                    </span>
+                    <h3 class="font-medium text-gray-900 dark:text-gray-100 product-name text-xs">${product.name || product.name_product}</h3>
+                    ${product.category ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}">${product.category}</span>` : ''}
                 </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    ${product.quantity && product.quantity !== '1' ? `<p class="font-semibold text-gray-800 product-quantity">${product.quantity}</p>` : ''}
-                    ${product.price && product.price > 0 ? `<p class="text-sm text-gray-600 product-price">${parseFloat(product.price).toFixed(2)}€</p>` : ''}
-                </div>
-                <div class="flex gap-2 no-print">
-                    <button onclick="openEditProductModal(${product.id}, '${product.name}', '${product.quantity}', '${product.category}', ${product.price})"
-                            class="text-blue-600 hover:text-blue-800 text-sm" title="Editar producto">
-                        ✏️
+            </td>
+            <td class="py-1.5 px-3">
+                <span class="text-gray-900 dark:text-gray-100 product-quantity text-xs">${product.quantity || '1'}</span>
+            </td>
+            <td class="py-1.5 px-3">
+                ${product.price && product.price > 0
+                    ? `<span class="text-gray-900 dark:text-gray-100 font-medium product-price text-xs">${parseFloat(product.price).toFixed(2)}€</span>`
+                    : `<span class="text-gray-400 dark:text-gray-500 text-xs">-</span>`
+                }
+            </td>
+            <td class="py-1.5 px-3 no-print">
+                <div class="flex items-center gap-1">
+                    <button onclick="openEditProductModal(${product.id}, '${(product.name || product.name_product).replace(/'/g, "\\'")}', '${product.quantity || '1'}', '${product.category || ''}', ${product.price || 0})"
+                            class="p-0.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 rounded transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
                     </button>
                     <button onclick="deleteProduct(${product.id})"
-                            class="text-red-600 hover:text-red-800 text-sm" title="Eliminar producto">
-                        🗑️
+                            class="p-0.5 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 rounded transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
                     </button>
                 </div>
-            </div>
-        </div>
+            </td>
+        </tr>
     `;
 
     // Añadir al contenedor
@@ -297,40 +329,52 @@ function addProductToDOM(product) {
 function updateProductInDOM(productId, product) {
     const productElement = document.querySelector(`[data-product-id="${productId}"]`);
 
-    if (!productElement) return;
+    if (!productElement) {
+        console.warn(`No se encontró el elemento del producto con ID ${productId}`);
+        return;
+    }
 
-    // Actualizar nombre y categoría
-    productElement.querySelector('.product-name').textContent = product.name;
-    productElement.querySelector('.product-category').textContent = product.category;
+    // Actualizar nombre del producto
+    const nameElement = productElement.querySelector('.product-name');
+    if (nameElement) {
+        nameElement.textContent = product.name || product.name_product;
+    } else {
+        console.warn('No se encontró el elemento .product-name');
+    }
+
+    // Actualizar categoría (buscar tanto span como elemento con texto)
+    const categoryElement = productElement.querySelector('span[class*="bg-"]');
+    if (categoryElement && product.category) {
+        categoryElement.textContent = product.category;
+    }
 
     // Actualizar cantidad
     const quantityElement = productElement.querySelector('.product-quantity');
-    if (product.quantity && product.quantity !== '1') {
-        if (quantityElement) {
-            quantityElement.textContent = product.quantity;
-        } else {
-            // Crear elemento de cantidad si no existe
-            const priceContainer = productElement.querySelector('.text-right');
-            priceContainer.insertAdjacentHTML('afterbegin',
-                `<p class="font-semibold text-gray-800 product-quantity">${product.quantity}</p>`);
-        }
-    } else if (quantityElement) {
-        quantityElement.remove();
+    if (quantityElement) {
+        quantityElement.textContent = product.quantity || '1';
+    } else {
+        console.warn('No se encontró el elemento .product-quantity');
     }
 
     // Actualizar precio
     const priceElement = productElement.querySelector('.product-price');
-    if (product.price && product.price > 0) {
-        if (priceElement) {
+    if (priceElement) {
+        if (product.price && product.price > 0) {
             priceElement.textContent = `${parseFloat(product.price).toFixed(2)}€`;
+            priceElement.className = 'text-gray-900 dark:text-gray-100 font-medium product-price text-xs';
         } else {
-            // Crear elemento de precio si no existe
-            const priceContainer = productElement.querySelector('.text-right');
-            priceContainer.insertAdjacentHTML('beforeend',
-                `<p class="text-sm text-gray-600 product-price">${parseFloat(product.price).toFixed(2)}€</p>`);
+            priceElement.textContent = '-';
+            priceElement.className = 'text-gray-400 dark:text-gray-500 text-xs';
         }
-    } else if (priceElement) {
-        priceElement.remove();
+    } else {
+        console.warn('No se encontró el elemento .product-price');
+    }
+
+    // Actualizar el botón de editar con los nuevos valores
+    const editButton = productElement.querySelector('button[onclick*="openEditProductModal"]');
+    if (editButton) {
+        const newOnclick = `openEditProductModal(${productId}, '${(product.name || product.name_product).replace(/'/g, "\\'")}', '${product.quantity || '1'}', '${product.category || ''}', ${product.price || 0})`;
+        editButton.setAttribute('onclick', newOnclick);
     }
 }
 

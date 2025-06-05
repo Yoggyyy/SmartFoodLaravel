@@ -66,7 +66,7 @@ async function loadConversationsFromServer() {
     try {
         console.log('Cargando conversaciones del servidor...');
 
-        const result = await apiRequest('/chat/conversations');
+        const result = await webRequest('/chat/conversations');
         console.log('Respuesta del servidor:', result);
 
         if (result.success) {
@@ -86,15 +86,30 @@ async function loadConversationsFromServer() {
                 addConversationToSidebar(conv.id, conv.name);
             });
 
-            // Si no hay conversaciones, crear la primera
-            if (result.data.length === 0) {
-                console.log('No hay conversaciones, creando la primera...');
-                await createNewConversation();
-            } else {
-                // Seleccionar la conversación más reciente
+            // Si hay conversaciones, seleccionar la más reciente
+            if (result.data.length > 0) {
                 const latestConversation = result.data[0];
                 console.log('Seleccionando conversación más reciente:', latestConversation.id);
                 selectConversation(latestConversation.id);
+            } else {
+                // Si no hay conversaciones, mostrar chat vacío listo para empezar
+                console.log('No hay conversaciones existentes, chat listo para empezar');
+                currentConversationId = null;
+
+                // Limpiar el área de chat
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center">
+                        <div class="text-6xl mb-4">💬</div>
+                        <h2 class="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">¡Hola! Soy SmartFood</h2>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">Cuéntame qué necesitas comprar y te ayudo a crear la lista perfecta</p>
+                        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 max-w-md">
+                            <p class="text-sm text-green-700 dark:text-green-400">
+                                💡 <strong>Tip:</strong> Puedes decirme cosas como "necesito una lista para 4 personas con presupuesto de 40€ para Mercadona"
+                            </p>
+                        </div>
+                    </div>
+                `;
             }
 
             console.log('Conversaciones cargadas exitosamente:', Object.keys(conversations).length);
@@ -111,8 +126,8 @@ async function loadConversationsFromServer() {
             loadConversationsFromCache();
 
             if (Object.keys(conversations).length === 0) {
-                console.log('No hay conversaciones en cache, creando nueva...');
-                await createNewConversation();
+                console.log('No hay conversaciones en cache, mostrando chat vacío');
+                showEmptyChat();
             }
         }
 
@@ -125,10 +140,32 @@ async function loadConversationsFromServer() {
         loadConversationsFromCache();
 
         if (Object.keys(conversations).length === 0) {
-            console.log('No hay conversaciones en cache, creando nueva offline...');
-            await createNewConversation();
+            console.log('No hay conversaciones en cache, mostrando chat vacío');
+            showEmptyChat();
         }
     }
+}
+
+/**
+ * Mostrar chat vacío cuando no hay conversaciones
+ */
+function showEmptyChat() {
+    currentConversationId = null;
+
+    // Limpiar el área de chat
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full text-center">
+            <div class="text-6xl mb-4">💬</div>
+            <h2 class="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">¡Hola! Soy SmartFood</h2>
+            <p class="text-gray-500 dark:text-gray-400 mb-6">Cuéntame qué necesitas comprar y te ayudo a crear la lista perfecta</p>
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 max-w-md">
+                <p class="text-sm text-green-700 dark:text-green-400">
+                    💡 <strong>Tip:</strong> Puedes decirme cosas como "necesito una lista para 4 personas con presupuesto de 40€ para Mercadona"
+                </p>
+            </div>
+        </div>
+    `;
 }
 
 /**
@@ -136,18 +173,25 @@ async function loadConversationsFromServer() {
  */
 async function createNewConversation() {
     try {
-        console.log('Creando nueva conversación...');
+        console.log('🆕 Creando nueva conversación...');
 
-        const result = await apiRequest('/chat/conversations', {
+        const result = await webRequest('/chat/conversations', {
             method: 'POST',
             body: JSON.stringify({
                 name: 'Nueva Lista'
             })
         });
 
+        console.log('📥 Respuesta del servidor al crear conversación:', result);
+
         if (result.success) {
             const conversationId = result.data.id;
             const conversationName = result.data.name;
+
+            console.log('✅ Conversación creada en servidor:');
+            console.log('- ID:', conversationId);
+            console.log('- Nombre:', conversationName);
+            console.log('- ID type:', typeof conversationId);
 
             // Crear objeto de conversación local
             conversations[conversationId] = {
@@ -158,27 +202,37 @@ async function createNewConversation() {
                 updated_at: result.data.updated_at
             };
 
+            console.log('🗂️ Conversación añadida a objeto conversations');
+
             // Agregar al sidebar y seleccionar
             addConversationToSidebar(conversationId, conversationName);
+            console.log('📋 Conversación añadida al sidebar');
+
             selectConversation(conversationId);
+            console.log('🎯 selectConversation llamado');
 
             // Guardar en cache
             saveConversationsToCache();
 
-            console.log('Conversación creada exitosamente:', conversationId);
+            console.log('💾 Conversación guardada en cache');
+            console.log('currentConversationId después de crear:', currentConversationId);
 
         } else {
-            console.error('Error al crear conversación:', result.message);
+            console.error('❌ Error al crear conversación en servidor:', result.message);
             showMessage('Error al crear nueva conversación', 'error');
         }
 
     } catch (error) {
-        console.error('Error de conexión al crear conversación:', error);
+        console.error('❌ Error de conexión al crear conversación:', error);
 
         // Fallback: crear conversación solo localmente
         conversationCounter++;
         const conversationId = `local_${conversationCounter}`;
         const conversationName = `Nueva Lista`;
+
+        console.log('🔄 Creando conversación local como fallback:');
+        console.log('- ID:', conversationId);
+        console.log('- Nombre:', conversationName);
 
         conversations[conversationId] = {
             id: conversationId,
@@ -192,6 +246,7 @@ async function createNewConversation() {
         selectConversation(conversationId);
         saveConversationsToCache();
 
+        console.log('currentConversationId después de crear (local):', currentConversationId);
         showMessage('Conversación creada offline', 'warning');
     }
 }
@@ -225,10 +280,18 @@ function addConversationToSidebar(conversationId, conversationName) {
  * @param {string} conversationId - ID de la conversación a seleccionar
  */
 function selectConversation(conversationId) {
+    console.log('🎯 selectConversation llamado con ID:', conversationId);
+    console.log('conversationId type:', typeof conversationId);
+    console.log('Conversación existe?', !!conversations[conversationId]);
+
     if (!conversations[conversationId]) {
         console.error('Conversación no encontrada:', conversationId);
         return;
     }
+
+    // Establecer la conversación actual
+    currentConversationId = conversationId;
+    console.log('✅ currentConversationId establecido a:', currentConversationId);
 
     // Quitar selección de la conversación anterior
     document.querySelectorAll('.conversation-item').forEach(item => {
@@ -260,6 +323,7 @@ function selectConversation(conversationId) {
     saveConversationsToCache();
 
     console.log('Conversación seleccionada:', conversationId, 'con', conversations[conversationId]?.messages?.length || 0, 'mensajes');
+    console.log('currentConversationId establecido a:', currentConversationId);
 }
 
 /**
@@ -291,7 +355,7 @@ async function deleteConversation(conversationId, event) {
     try {
         // Si es una conversación del servidor, eliminarla del backend
         if (!conversations[conversationId].isLocal) {
-            const result = await apiRequest(`/chat/conversations/${conversationId}`, {
+            const result = await webRequest(`/chat/conversations/${conversationId}`, {
                 method: 'DELETE'
             });
 
@@ -328,10 +392,36 @@ async function deleteConversation(conversationId, event) {
 async function sendMessage(e) {
     e.preventDefault();
 
+    console.log('📤 sendMessage llamado');
+    console.log('currentConversationId antes de enviar:', currentConversationId);
+    console.log('conversaciones disponibles:', Object.keys(conversations));
+
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
 
-    if (!message || !currentConversationId) return;
+    console.log('Mensaje a enviar:', message);
+
+    if (!message) {
+        console.log('⚠️ Envío cancelado - mensaje vacío');
+        return;
+    }
+
+    // Si no hay conversación activa, crear una nueva automáticamente
+    if (!currentConversationId) {
+        console.log('🆕 No hay conversación activa, creando nueva para el primer mensaje');
+        await createNewConversation();
+
+        // Verificar que se creó correctamente
+        if (!currentConversationId) {
+            console.log('❌ Error: No se pudo crear conversación');
+            showMessage('Error al crear conversación', 'error');
+            return;
+        }
+        console.log('✅ Nueva conversación creada con ID:', currentConversationId);
+    }
+
+    console.log('✅ Procediendo con envío del mensaje');
+    console.log('currentConversationId final antes de API:', currentConversationId);
 
     // Limpiar input y agregar mensaje del usuario
     messageInput.value = '';
@@ -351,13 +441,34 @@ async function sendMessage(e) {
  */
 async function sendMessageToAPI(message, conversationId) {
     try {
-        const result = await apiRequest('/chat/send-message', {
+        console.log('🔍 DEBUG sendMessageToAPI:');
+        console.log('- message:', message);
+        console.log('- conversationId:', conversationId);
+        console.log('- conversationId type:', typeof conversationId);
+        console.log('- conversationId === null:', conversationId === null);
+        console.log('- conversationId === undefined:', conversationId === undefined);
+
+        // Preparar el cuerpo de la petición
+        const requestBody = {
+            message: message
+        };
+
+        // Solo incluir conversation_id si no es null
+        if (conversationId) {
+            requestBody.conversation_id = String(conversationId); // Convertir a string para validación
+            console.log('✅ Incluyendo conversation_id:', conversationId, '(convertido a string:', String(conversationId), ')');
+        } else {
+            console.log('❌ NO incluyendo conversation_id (es null/undefined)');
+        }
+
+        console.log('📤 Enviando requestBody:', requestBody);
+
+        const result = await webRequest('/chat/send-message', {
             method: 'POST',
-            body: JSON.stringify({
-                message: message,
-                conversation_id: conversationId
-            })
+            body: JSON.stringify(requestBody)
         });
+
+        console.log('📥 Respuesta del servidor:', result);
 
         // Ocultar indicador de "escribiendo..."
         hideTypingIndicator();
@@ -540,7 +651,7 @@ async function tryUpdateConversationName(message) {
         // Sincronizar con servidor si no es local
         if (!conversations[currentConversationId].isLocal) {
             try {
-                const result = await apiRequest(`/chat/conversations/${currentConversationId}`, {
+                const result = await webRequest(`/chat/conversations/${currentConversationId}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         name: newName
@@ -782,7 +893,7 @@ function parseShoppingListFromMessage(message) {
             // Sincronizar con servidor si no es local
             if (!conversations[currentConversationId].isLocal) {
                 // Hacer la actualización en background sin esperar
-                apiRequest(`/chat/conversations/${currentConversationId}`, {
+                webRequest(`/chat/conversations/${currentConversationId}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         name: listData.conversation_title
@@ -1127,7 +1238,7 @@ async function syncMessageToServer(conversationId, content, type) {
     }
 
     try {
-        const result = await apiRequest(`/chat/conversations/${conversationId}/messages`, {
+        const result = await webRequest(`/chat/conversations/${conversationId}/messages`, {
             method: 'POST',
             body: JSON.stringify({
                 content: content,
@@ -1150,7 +1261,7 @@ async function syncMessageToServer(conversationId, content, type) {
  */
 async function fetchUserProfile() {
     try {
-        const result = await apiRequest('/user/me');
+        const result = await webRequest('/user/me');
         if (result.success) {
             // Guardar información del usuario para usar en el chat
             window.currentUser = result.data;
@@ -1218,7 +1329,7 @@ function showMessage(message, type = 'info') {
  */
 async function reloadConversationFromServer(conversationId) {
     try {
-        const result = await apiRequest(`/chat/conversations/${conversationId}`);
+        const result = await webRequest(`/chat/conversations/${conversationId}`);
 
         if (result.success) {
             // Actualizar datos locales con los del servidor
