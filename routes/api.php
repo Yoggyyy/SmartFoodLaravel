@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ShoppingListController;
 
 
 // Rutas públicas de autenticación (API)
@@ -31,5 +32,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/send-message', [ChatController::class, 'sendMessage']);
         Route::get('/usage-stats', [ChatController::class, 'getUsageStats']);
         Route::get('/suggestions', [ChatController::class, 'getQuickSuggestions']);
+    });
+
+    // Rutas de listas de compra (API)
+    Route::prefix('listas')->group(function () {
+        Route::put('/{listId}/productos/{productId}', [ShoppingListController::class, 'updateProduct']);
+        Route::delete('/{listId}/productos/{productId}', [ShoppingListController::class, 'removeProduct']);
+        Route::put('/{listId}/productos/{productId}/completed', [ShoppingListController::class, 'updateProductCompleted']);
+        Route::put('/{listId}/status', [ShoppingListController::class, 'updateListStatus']);
     });
 });

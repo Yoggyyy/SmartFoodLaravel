@@ -1,0 +1,23 @@
+/**
+ * SmartFood - Estilos de Autenticación
+ *
+ * Estilos específicos para las páginas de login y registro
+ */
+
+/* Archivo disponible para futuros estilos personalizados */
+
+/* Controlar el autocompletado del navegador para evitar fondo amarillo */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #4b5563 inset !important; /* bg-gray-600 */
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Para navegadores que no son webkit */
+input[data-autocompleted] {
+    background-color: #4b5563 !important; /* bg-gray-600 */
+    color: white !important;
+}

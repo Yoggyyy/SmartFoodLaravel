@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
@@ -56,6 +57,7 @@ class AuthController extends Controller
      * - password (required|string|min:8|confirmed): Contraseña segura
      * - preferences (nullable|string): Preferencias alimentarias del usuario
      * - allergens (nullable|array): Array de IDs de alérgenos
+     * - allergens.* (exists:allergens,id): Verificación de existencia de alérgenos
      *
      * @example
      * POST /api/auth/register
@@ -197,7 +199,7 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // Implementar verificación de email más adelante
+            // TEMPORAL: Verificación de email desactivada
             /*
             // Verificar si el email está verificado
             if (!$user->hasVerifiedEmail()) {
@@ -472,18 +474,14 @@ class AuthController extends Controller
         try {
             $user = $request->user();
 
-            // Validación de datos
+            // Validación de datos (sin email)
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'surname' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'preferences' => 'nullable|string'
             ], [
                 'name.required' => 'El nombre es obligatorio.',
-                'surname.required' => 'Los apellidos son obligatorios.',
-                'email.required' => 'El correo electrónico es obligatorio.',
-                'email.email' => 'El formato del correo electrónico no es válido.',
-                'email.unique' => 'Este correo electrónico ya está en uso por otro usuario.'
+                'surname.required' => 'Los apellidos son obligatorios.'
             ]);
 
             if ($validator->fails()) {
@@ -494,11 +492,10 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            // Actualizar datos del usuario
+            // Actualizar datos del usuario (sin email)
             $user->update([
                 'name' => $request->name,
                 'surname' => $request->surname,
-                'email' => $request->email,
                 'preferences' => $request->preferences,
             ]);
 
@@ -574,7 +571,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Login para web (usando sesiones)
+     * Iniciar sesión web (Enfoque Híbrido)
+     *
+     * Este método maneja tanto peticiones AJAX como formularios tradicionales
+     * para una mejor experiencia de usuario y accesibilidad.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function webLogin(Request $request)
     {
@@ -583,57 +586,133 @@ class AuthController extends Controller
             $validator = Validator::make($request->all(), [
                 'email' => 'required|email',
                 'password' => 'required|string',
+                'remember' => 'boolean'
             ], [
                 'email.required' => 'El correo electrónico es obligatorio.',
                 'email.email' => 'El formato del correo electrónico no es válido.',
                 'password.required' => 'La contraseña es obligatoria.'
             ]);
 
+            // Si hay errores de validación
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $validator->errors()
-                ], 422);
+                // Para peticiones AJAX
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                // Para formularios tradicionales
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->withInput($request->except('password'));
             }
 
-            // Verificar credenciales
-            if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.'
-                ], 401);
+            // Intentar autenticación
+            $credentials = $request->only('email', 'password');
+            $remember = $request->boolean('remember');
+
+            if (!Auth::attempt($credentials, $remember)) {
+                $errorMessage = 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.';
+
+                // Para peticiones AJAX
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 401);
+                }
+
+                // Para formularios tradicionales
+                return redirect()->back()
+                    ->withErrors(['email' => $errorMessage])
+                    ->withInput($request->except('password'));
             }
 
-            // Regenerar sesión para seguridad
+            // Regenerar sesión por seguridad
             $request->session()->regenerate();
 
             $user = Auth::user();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inicio de sesión exitoso',
-                'data' => [
-                    'user' => $user->load('allergens')
-                ]
-            ], 200);
+            // TEMPORAL: Verificación de email desactivada
+            /*
+            // Verificar si el email está verificado
+            if (!$user->hasVerifiedEmail()) {
+                $verificationMessage = 'Tu email no está verificado. Por favor, verifica tu email para continuar.';
+
+                // Para peticiones AJAX
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $verificationMessage,
+                        'needs_verification' => true,
+                        'user_id' => $user->id
+                    ], 403);
+                }
+
+                // Para formularios tradicionales - logout y redirigir
+                Auth::logout();
+                return redirect()->back()
+                    ->withErrors(['email' => $verificationMessage])
+                    ->withInput($request->except('password'));
+            }
+            */
+
+            $successMessage = '¡Inicio de sesión exitoso! Bienvenido/a de vuelta.';
+
+            // Para peticiones AJAX
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'redirect_url' => route('chat'),
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email
+                    ]
+                ], 200);
+            }
+
+            // Para formularios tradicionales
+            return redirect()->intended(route('chat'))
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error interno del servidor',
-                'error' => $e->getMessage()
-            ], 500);
+            \Log::error('Error en webLogin: ' . $e->getMessage());
+
+            $errorMessage = 'Error interno del servidor. Por favor, inténtalo de nuevo.';
+
+            // Para peticiones AJAX
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            // Para formularios tradicionales
+            return redirect()->back()
+                ->withErrors(['general' => $errorMessage])
+                ->withInput($request->except('password'));
         }
     }
 
     /**
-     * Register para web (usando sesiones)
+     * Registrar usuario web (Enfoque Híbrido)
+     *
+     * Este método maneja tanto peticiones AJAX como formularios tradicionales
+     * para una mejor experiencia de usuario y accesibilidad en el registro.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function webRegister(Request $request)
     {
         try {
-            // Validación de datos de entrada
+            // Validación exhaustiva de datos de entrada
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'surname' => 'required|string|max:255',
@@ -643,21 +722,35 @@ class AuthController extends Controller
                 'allergens' => 'nullable|array',
                 'allergens.*' => 'exists:allergens,id'
             ], [
+                'name.required' => 'El nombre es obligatorio.',
+                'surname.required' => 'Los apellidos son obligatorios.',
+                'email.required' => 'El correo electrónico es obligatorio.',
+                'email.email' => 'El formato del correo electrónico no es válido.',
                 'email.unique' => 'Este correo electrónico ya está registrado.',
+                'password.required' => 'La contraseña es obligatoria.',
                 'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
                 'password.confirmed' => 'Las contraseñas no coinciden.',
                 'allergens.*.exists' => 'Uno o más alérgenos seleccionados no son válidos.'
             ]);
 
+            // Si hay errores de validación
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $validator->errors()
-                ], 422);
+                // Para peticiones AJAX
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                // Para formularios tradicionales
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->withInput($request->except(['password', 'password_confirmation']));
             }
 
-            // Crear usuario
+            // Crear nuevo usuario
             $user = User::create([
                 'name' => $request->name,
                 'surname' => $request->surname,
@@ -671,26 +764,52 @@ class AuthController extends Controller
                 $user->allergens()->attach($request->allergens);
             }
 
-            // Enviar email de verificación
+            // Enviar email de verificación (evento)
             event(new Registered($user));
 
             // Iniciar sesión automáticamente después del registro
             Auth::login($user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico.',
-                'data' => [
-                    'user' => $user->load('allergens')
-                ]
-            ], 201);
+            // Regenerar sesión por seguridad
+            $request->session()->regenerate();
+
+            $successMessage = '¡Registro exitoso! Bienvenido/a a SmartFood.';
+
+            // Para peticiones AJAX
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'redirect_url' => route('chat'),
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email
+                    ]
+                ], 201);
+            }
+
+            // Para formularios tradicionales
+            return redirect()->intended(route('chat'))
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error interno del servidor',
-                'error' => $e->getMessage()
-            ], 500);
+            Log::error('Error en webRegister: ' . $e->getMessage());
+
+            $errorMessage = 'Error interno del servidor. Por favor, inténtalo de nuevo.';
+
+            // Para peticiones AJAX
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            // Para formularios tradicionales
+            return redirect()->back()
+                ->withErrors(['general' => $errorMessage])
+                ->withInput($request->except(['password', 'password_confirmation']));
         }
     }
 
@@ -749,18 +868,14 @@ class AuthController extends Controller
         try {
             $user = $request->user();
 
-            // Validación de datos
+            // Validación de datos (sin email)
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'surname' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'preferences' => 'nullable|string'
             ], [
                 'name.required' => 'El nombre es obligatorio.',
-                'surname.required' => 'Los apellidos son obligatorios.',
-                'email.required' => 'El correo electrónico es obligatorio.',
-                'email.email' => 'El formato del correo electrónico no es válido.',
-                'email.unique' => 'Este correo electrónico ya está en uso por otro usuario.'
+                'surname.required' => 'Los apellidos son obligatorios.'
             ]);
 
             if ($validator->fails()) {
@@ -771,11 +886,10 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            // Actualizar datos del usuario
+            // Actualizar datos del usuario (sin email)
             $user->update([
                 'name' => $request->name,
                 'surname' => $request->surname,
-                'email' => $request->email,
                 'preferences' => $request->preferences,
             ]);
 
@@ -805,7 +919,7 @@ class AuthController extends Controller
             // Validación de datos
             $validator = Validator::make($request->all(), [
                 'current_password' => 'required|string',
-                'password' => 'required|string|min:8|confirmed'
+                'password' => 'required|string|min:8|confirmed',
             ], [
                 'current_password.required' => 'La contraseña actual es obligatoria.',
                 'password.required' => 'La nueva contraseña es obligatoria.',
@@ -825,8 +939,8 @@ class AuthController extends Controller
             if (!Hash::check($request->current_password, $user->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La contraseña actual es incorrecta.'
-                ], 400);
+                    'message' => 'La contraseña actual es incorrecta'
+                ], 422);
             }
 
             // Actualizar contraseña
@@ -836,13 +950,51 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Contraseña actualizada exitosamente'
+                'message' => 'Contraseña cambiada exitosamente'
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error al cambiar contraseña',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener estadísticas del usuario (Web)
+     */
+    public function webUserStats(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // Obtener cantidad de listas del usuario
+            $listsCount = $user->shoppingLists()->count();
+
+            // Obtener fecha de la última actividad (última lista creada o última actualización de usuario)
+            $lastListActivity = $user->shoppingLists()->latest('updated_at')->first();
+            $lastActivity = $lastListActivity ? $lastListActivity->updated_at : $user->updated_at;
+
+            $stats = [
+                'member_since' => $user->created_at->toISOString(),
+                'lists_count' => $listsCount,
+                'last_activity' => $lastActivity->toISOString(),
+                'total_products' => $user->shoppingLists()->withCount('products')->get()->sum('products_count'),
+                'email_verified' => $user->hasVerifiedEmail(),
+                'allergens_count' => $user->allergens()->count()
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas del usuario',
                 'error' => $e->getMessage()
             ], 500);
         }

@@ -11,9 +11,15 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
-        'message_content',
+        'content',
+        'type',
         'user_id',
         'conversation_id',
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     /**

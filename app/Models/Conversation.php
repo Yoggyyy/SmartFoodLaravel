@@ -12,8 +12,15 @@ class Conversation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',
+        'name',
         'user_id',
+        'is_active'
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     /**
@@ -30,5 +37,13 @@ class Conversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    /**
+     * Relación con listas de compra (uno a muchos)
+     */
+    public function shoppingLists(): HasMany
+    {
+        return $this->hasMany(ShoppingList::class);
     }
 }

@@ -280,15 +280,283 @@ class ChatController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Chat: Error al generar sugerencias rápidas', [
+            Log::error('Chat: Error al obtener sugerencias', [
                 'error' => $e->getMessage(),
-                'user_id' => $request->user()->id,
+                'user_id' => $request->user()->id ?? null,
                 'timestamp' => now()->toISOString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al generar sugerencias'
+                'message' => 'Error al obtener sugerencias',
+                'data' => ['suggestions' => []]
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener todas las conversaciones del usuario autenticado
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getConversations(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $conversations = $user->conversations()
+                ->with(['messages' => function($query) {
+                    $query->orderBy('created_at', 'asc');
+                }])
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversations
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al obtener conversaciones', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener conversaciones'
+            ], 500);
+        }
+    }
+
+    /**
+     * Crear nueva conversación para el usuario
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createConversation(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'nullable|string|max:255'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            $conversation = $user->conversations()->create([
+                'name' => $request->name ?? 'Nueva Lista',
+                'is_active' => true
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversation
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al crear conversación', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear conversación'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener conversación específica con sus mensajes
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function getConversation(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $conversation = $user->conversations()
+                ->with(['messages' => function($query) {
+                    $query->orderBy('created_at', 'asc');
+                }])
+                ->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversation
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al obtener conversación', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'conversation_id' => $id,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversación no encontrada'
+            ], 404);
+        }
+    }
+
+    /**
+     * Actualizar conversación (principalmente el nombre)
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function updateConversation(Request $request, $id): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            $conversation = $user->conversations()->findOrFail($id);
+            $conversation->update([
+                'name' => $request->name
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversation
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al actualizar conversación', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'conversation_id' => $id,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar conversación'
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar conversación y todos sus mensajes
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function deleteConversation(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $conversation = $user->conversations()->findOrFail($id);
+
+            // Eliminar todos los mensajes asociados
+            $conversation->messages()->delete();
+
+            // Eliminar la conversación
+            $conversation->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Conversación eliminada exitosamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al eliminar conversación', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'conversation_id' => $id,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar conversación'
+            ], 500);
+        }
+    }
+
+    /**
+     * Agregar mensaje a una conversación específica
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function addMessage(Request $request, $id): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'content' => 'required|string|max:10000',
+                'type' => 'required|in:user,bot'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            $conversation = $user->conversations()->findOrFail($id);
+
+            $message = $conversation->messages()->create([
+                'user_id' => $user->id,
+                'content' => $request->content,
+                'type' => $request->type
+            ]);
+
+            // Actualizar timestamp de la conversación
+            $conversation->touch();
+
+            return response()->json([
+                'success' => true,
+                'data' => $message
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Chat: Error al agregar mensaje', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id ?? null,
+                'conversation_id' => $id,
+                'timestamp' => now()->toISOString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al agregar mensaje'
             ], 500);
         }
     }

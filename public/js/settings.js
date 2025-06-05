@@ -1,6 +1,6 @@
 /**
  * SmartFood - Configuraciones
- * Manejo de configuraciones de la aplicación, tema oscuro y notificaciones
+ * Manejo de configuraciones de la aplicación con Tailwind nativo
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -9,23 +9,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Configurar eventos de configuración
     document.getElementById('language-select').addEventListener('change', changeLanguage);
-    document.getElementById('dark-mode-toggle').addEventListener('change', toggleDarkMode);
     document.getElementById('email-notifications').addEventListener('change', toggleEmailNotifications);
     document.getElementById('promotional-emails').addEventListener('change', togglePromotionalEmails);
     document.getElementById('shopping-reminders').addEventListener('change', toggleShoppingReminders);
 
-    // Configurar acordeón de FAQ
-    document.querySelectorAll('.faq-question').forEach(question => {
-        question.addEventListener('click', function() {
-            const answer = this.nextElementSibling;
-            const icon = this.querySelector('.faq-icon');
+    // Evento para el botón de guardar configuración
+    const saveButton = document.getElementById('save-settings-btn');
+    if (saveButton) {
+        saveButton.addEventListener('click', saveAllSettings);
+    }
 
-            // Alternar visibilidad de respuesta
-            answer.classList.toggle('hidden');
-            icon.style.transform = answer.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-        });
-    });
+    // Sincronizar el toggle del modo oscuro con TailwindDarkMode
+    syncDarkModeToggle();
 });
+
+/**
+ * Sincronizar el toggle de modo oscuro con el sistema TailwindDarkMode
+ */
+function syncDarkModeToggle() {
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle && window.TailwindDarkMode) {
+        // Sincronizar estado inicial
+        darkModeToggle.checked = window.TailwindDarkMode.isDarkMode();
+
+        // El evento change ya está manejado por TailwindDarkMode
+        // Solo necesitamos sincronizar al cargar
+    }
+}
 
 /**
  * Cargar configuraciones guardadas del localStorage
@@ -40,12 +50,6 @@ function loadSettings() {
             // Aplicar configuración de idioma
             if (settings.language) {
                 document.getElementById('language-select').value = settings.language;
-            }
-
-            // Aplicar modo oscuro
-            if (settings.darkMode) {
-                document.getElementById('dark-mode-toggle').checked = settings.darkMode;
-                applyDarkMode(settings.darkMode);
             }
 
             // Aplicar configuraciones de notificaciones
@@ -73,13 +77,33 @@ function loadSettings() {
 function saveSettings() {
     const settings = {
         language: document.getElementById('language-select').value,
-        darkMode: document.getElementById('dark-mode-toggle').checked,
+        darkMode: window.TailwindDarkMode ? window.TailwindDarkMode.isDarkMode() : false,
         emailNotifications: document.getElementById('email-notifications').checked,
         promotionalEmails: document.getElementById('promotional-emails').checked,
         shoppingReminders: document.getElementById('shopping-reminders').checked
     };
 
     localStorage.setItem('smartfood_settings', JSON.stringify(settings));
+}
+
+/**
+ * Guardar todas las configuraciones y mostrar feedback al usuario
+ */
+function saveAllSettings() {
+    saveSettings();
+
+    // Mostrar feedback visual
+    const feedbackElement = document.getElementById('settings-feedback');
+    if (feedbackElement) {
+        feedbackElement.classList.remove('hidden');
+
+        // Ocultar el mensaje después de 3 segundos
+        setTimeout(() => {
+            feedbackElement.classList.add('hidden');
+        }, 3000);
+    }
+
+    showMessage('¡Configuración guardada exitosamente!', 'success');
 }
 
 /**
@@ -96,123 +120,6 @@ function changeLanguage() {
 }
 
 /**
- * Alternar entre modo claro y oscuro
- */
-function toggleDarkMode() {
-    const isDarkMode = document.getElementById('dark-mode-toggle').checked;
-
-    applyDarkMode(isDarkMode);
-    saveSettings();
-
-    showMessage(`Modo ${isDarkMode ? 'oscuro' : 'claro'} activado`, 'success');
-}
-
-/**
- * Aplicar estilos de modo oscuro
- * @param {boolean} isDarkMode - true para activar modo oscuro
- */
-function applyDarkMode(isDarkMode) {
-    const body = document.body;
-
-    if (isDarkMode) {
-        body.classList.add('dark-mode');
-        updateDarkModeStyles();
-    } else {
-        body.classList.remove('dark-mode');
-        removeDarkModeStyles();
-    }
-}
-
-/**
- * Crear y aplicar estilos CSS para modo oscuro
- */
-function updateDarkModeStyles() {
-    // Crear elemento de estilos si no existe
-    let darkModeStyles = document.getElementById('dark-mode-styles');
-
-    if (!darkModeStyles) {
-        darkModeStyles = document.createElement('style');
-        darkModeStyles.id = 'dark-mode-styles';
-        document.head.appendChild(darkModeStyles);
-    }
-
-    // Definir estilos CSS para modo oscuro
-    darkModeStyles.textContent = `
-        .dark-mode {
-            background-color: #1a202c !important;
-            color: #e2e8f0 !important;
-        }
-
-        .dark-mode .bg-white {
-            background-color: #2d3748 !important;
-            color: #e2e8f0 !important;
-        }
-
-        .dark-mode .bg-gray-50 {
-            background-color: #2d3748 !important;
-        }
-
-        .dark-mode .bg-gray-100 {
-            background-color: #4a5568 !important;
-        }
-
-        .dark-mode .text-gray-600 {
-            color: #cbd5e0 !important;
-        }
-
-        .dark-mode .text-gray-700 {
-            color: #e2e8f0 !important;
-        }
-
-        .dark-mode .text-gray-800 {
-            color: #f7fafc !important;
-        }
-
-        .dark-mode .text-gray-900 {
-            color: #ffffff !important;
-        }
-
-        .dark-mode .border-gray-200 {
-            border-color: #4a5568 !important;
-        }
-
-        .dark-mode .border-gray-300 {
-            border-color: #718096 !important;
-        }
-
-        .dark-mode input,
-        .dark-mode select,
-        .dark-mode textarea {
-            background-color: #4a5568 !important;
-            color: #e2e8f0 !important;
-            border-color: #718096 !important;
-        }
-
-        .dark-mode .shadow {
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important;
-        }
-
-        .dark-mode .hover\\:bg-green-50:hover {
-            background-color: #2f855a !important;
-        }
-
-        .dark-mode .hover\\:bg-gray-50:hover {
-            background-color: #4a5568 !important;
-        }
-    `;
-}
-
-/**
- * Remover estilos de modo oscuro del DOM
- */
-function removeDarkModeStyles() {
-    const darkModeStyles = document.getElementById('dark-mode-styles');
-    if (darkModeStyles) {
-        darkModeStyles.remove();
-    }
-}
-
-/**
  * Alternar notificaciones por email
  */
 function toggleEmailNotifications() {
@@ -220,8 +127,6 @@ function toggleEmailNotifications() {
 
     saveSettings();
     showMessage(`Notificaciones por email ${isEnabled ? 'activadas' : 'desactivadas'}`, 'success');
-
-    // TODO: Enviar configuración al servidor para actualizar preferencias
 }
 
 /**
@@ -232,34 +137,28 @@ function togglePromotionalEmails() {
 
     saveSettings();
     showMessage(`Emails promocionales ${isEnabled ? 'activados' : 'desactivados'}`, 'success');
-
-    // TODO: Enviar configuración al servidor
 }
 
 /**
- * Alternar recordatorios de compras
+ * Alternar recordatorios de compra
  */
 function toggleShoppingReminders() {
     const isEnabled = document.getElementById('shopping-reminders').checked;
 
     saveSettings();
-    showMessage(`Recordatorios de compras ${isEnabled ? 'activados' : 'desactivados'}`, 'success');
-
-    // TODO: Enviar configuración al servidor
+    showMessage(`Recordatorios de compra ${isEnabled ? 'activados' : 'desactivados'}`, 'success');
 }
 
 /**
  * Limpiar configuraciones al cerrar sesión
- * Esta función es llamada desde common.js durante el logout
  */
 function clearSettingsOnLogout() {
-    // Remover modo oscuro si está activo
-    removeDarkModeStyles();
-    document.body.classList.remove('dark-mode');
+    localStorage.removeItem('smartfood_settings');
 
-    // No eliminamos las configuraciones del localStorage
-    // para que se mantengan cuando el usuario vuelva a iniciar sesión
-    console.log('Configuraciones de sesión limpiadas');
+    // El modo oscuro Tailwind gestiona su propio almacenamiento
+    if (window.TailwindDarkMode) {
+        window.TailwindDarkMode.clearSettings();
+    }
 }
 
 // Exportar función para usar en logout global

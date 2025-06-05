@@ -16,6 +16,7 @@ class ShoppingList extends Model
         'budget',
         'user_id',
         'supermarket_id',
+        'conversation_id',
     ];
 
     protected $casts = [
@@ -39,12 +40,20 @@ class ShoppingList extends Model
     }
 
     /**
+     * Relación con conversación (muchos a uno)
+     */
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(Conversation::class);
+    }
+
+    /**
      * Relación con productos (muchos a muchos)
      */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'shopping_list_products')
-                    ->withPivot('quantity', 'content')
+                    ->withPivot('quantity', 'content', 'completed')
                     ->withTimestamps();
     }
 }

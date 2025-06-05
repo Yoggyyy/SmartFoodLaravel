@@ -36,7 +36,7 @@ class Product extends Model
     public function shoppingLists(): BelongsToMany
     {
         return $this->belongsToMany(ShoppingList::class, 'shopping_list_products')
-                    ->withPivot('quantity', 'content')
+                    ->withPivot('quantity', 'content', 'completed')
                     ->withTimestamps();
     }
 }

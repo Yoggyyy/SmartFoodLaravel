@@ -68,8 +68,8 @@ function showMessage(message, type = 'success') {
         existingMessage.remove();
     }
 
-    // Color según tipo de mensaje
-    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    // Color según tipo de mensaje usando la paleta simplificada
+    const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
 
     // Crear elemento del mensaje
     const messageHtml = `
@@ -137,7 +137,12 @@ async function logout() {
         localStorage.removeItem('smartfood_conversations');
         localStorage.removeItem('smartfood_settings');
 
-        // Limpiar configuraciones si la función existe
+        // Limpiar configuraciones de tema usando el nuevo sistema global
+        if (window.DarkModeManager) {
+            window.DarkModeManager.clearSettings();
+        }
+
+        // Limpiar configuraciones si la función existe (sistema anterior)
         if (typeof clearSettingsOnLogout === 'function') {
             clearSettingsOnLogout();
         }
